@@ -1,12 +1,9 @@
-// Filter the features based on population density and display the ones with
-higher density.
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Filter by Population Density</title>
+    <title>High Density Areas</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -15,6 +12,7 @@ higher density.
       #map {
         height: 500px;
         width: 100%;
+        z-index: 1; /* Ensure the map stays below the info box */
       }
       .info-box {
         position: absolute;
@@ -23,48 +21,73 @@ higher density.
         background-color: white;
         padding: 10px;
         border: 1px solid black;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        font-size: 18px;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        margin: 20px 0;
       }
     </style>
   </head>
   <body>
+    <h1>High Population Density Areas in Kanchanpur</h1>
+
     <div id="map"></div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-      // Initialize the map
-      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur approximate coordinates
+      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur coordinates
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
-      // Fetch the GeoJSON data
       fetch(
         "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
       )
         .then((response) => response.json())
         .then((data) => {
-          // Filter features with population density greater than 500 people/km²
-          const highDensityFeatures = data.features.filter(
-            (feature) => feature.properties.Density > 1000
+          let highestDensity = 0;
+          let highDensityFeatures = [];
+
+          // First, determine the highest population density
+          data.features.forEach((feature) => {
+            const density = feature.properties.Density;
+            if (density > highestDensity) {
+              highestDensity = density;
+            }
+          });
+
+          // Filter the features with density greater than a certain threshold
+          highDensityFeatures = data.features.filter(
+            (feature) => feature.properties.Density >= highestDensity
           );
 
-          console.log("High Density Areas:", highDensityFeatures);
+          // Format the highest density to two decimal places
+          const formattedDensity = highestDensity.toFixed(2);
 
-          // Display the result on the webpage
+          console.log("Highest Density:", formattedDensity);
+
+          // Create the info box displaying the highest density
           const infoDiv = document.createElement("div");
+          infoDiv.classList.add("info-box");
           infoDiv.innerHTML = `
-          <strong>High Density Areas:</strong> ${highDensityFeatures.length} features
-        `;
-          infoDiv.style.position = "absolute";
-          infoDiv.style.top = "10px";
-          infoDiv.style.left = "10px";
-          infoDiv.style.backgroundColor = "white";
-          infoDiv.style.padding = "10px";
-          infoDiv.style.border = "1px solid black";
+            <strong>Highest Density:</strong> ${formattedDensity} per sq.km
+          `;
           document.body.appendChild(infoDiv);
 
-          // Add high density areas to the map
-          L.geoJSON(highDensityFeatures).addTo(map);
+          // Add only the high-density polygons to the map
+          L.geoJSON({
+            type: "FeatureCollection",
+            features: highDensityFeatures,
+          }).addTo(map);
         })
         .catch((error) => console.error("Error loading GeoJSON:", error));
     </script>
