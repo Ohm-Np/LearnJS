@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Render GeoJSON Map</title>
+    <!-- Include Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      /* Set the map container's size */
+      #map {
+        height: 500px; /* Adjust height as needed */
+        width: 100%; /* Full width */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Map container -->
+    <div id="map"></div>
+
+    <!-- Include Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+      // Initialize the map and set its view to a specific location and zoom level
+      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur approximate coordinates
+
+      // Add a tile layer (background map)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Fetch and render the GeoJSON data
+      fetch(
+        "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          // Add GeoJSON to the map
+          L.geoJSON(data, {
+            style: {
+              color: "blue", // Customize feature color
+              weight: 2,
+            },
+            onEachFeature: (feature, layer) => {
+              // Add a popup to each feature
+              layer.bindPopup(`
+              <strong>Name:</strong> ${feature.properties.NAME}<br>
+              <strong>Population:</strong> ${feature.properties.Population}<br>
+              <strong>Area:</strong> ${feature.properties.Area} km²<br>
+              <strong>Density:</strong> ${feature.properties.Density} people/km²
+            `);
+            },
+          }).addTo(map);
+        })
+        .catch((error) => console.error("Error loading GeoJSON:", error));
+    </script>
+  </body>
+</html>

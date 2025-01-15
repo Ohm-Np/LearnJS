@@ -1,0 +1,72 @@
+// Filter the features based on population density and display the ones with
+higher density.
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filter by Population Density</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      .info-box {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: white;
+        padding: 10px;
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // Initialize the map
+      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur approximate coordinates
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Fetch the GeoJSON data
+      fetch(
+        "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          // Filter features with population density greater than 500 people/km²
+          const highDensityFeatures = data.features.filter(
+            (feature) => feature.properties.Density > 1000
+          );
+
+          console.log("High Density Areas:", highDensityFeatures);
+
+          // Display the result on the webpage
+          const infoDiv = document.createElement("div");
+          infoDiv.innerHTML = `
+          <strong>High Density Areas:</strong> ${highDensityFeatures.length} features
+        `;
+          infoDiv.style.position = "absolute";
+          infoDiv.style.top = "10px";
+          infoDiv.style.left = "10px";
+          infoDiv.style.backgroundColor = "white";
+          infoDiv.style.padding = "10px";
+          infoDiv.style.border = "1px solid black";
+          document.body.appendChild(infoDiv);
+
+          // Add high density areas to the map
+          L.geoJSON(highDensityFeatures).addTo(map);
+        })
+        .catch((error) => console.error("Error loading GeoJSON:", error));
+    </script>
+  </body>
+</html>

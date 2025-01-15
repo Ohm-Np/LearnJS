@@ -1,0 +1,26 @@
+<script>
+  fetch(
+    "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      // Calculate total population
+      const totalPopulation = data.features.reduce((sum, feature) => {
+        return sum + feature.properties.Population; // Add the population of each feature
+      }, 0);
+
+      console.log("Total Population:", totalPopulation);
+
+      // Display result on the webpage
+      const populationDiv = document.createElement("div");
+      populationDiv.innerHTML = `<strong>Total Population:</strong> ${totalPopulation}`;
+      populationDiv.style.position = "absolute";
+      populationDiv.style.top = "10px";
+      populationDiv.style.left = "10px";
+      populationDiv.style.backgroundColor = "white";
+      populationDiv.style.padding = "10px";
+      populationDiv.style.border = "1px solid black";
+      document.body.appendChild(populationDiv);
+    })
+    .catch((error) => console.error("Error loading GeoJSON:", error));
+</script>
