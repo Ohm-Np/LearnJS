@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Population and Density Visualization</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .controls {
+        text-align: center;
+        margin: 10px;
+      }
+      select {
+        padding: 5px;
+        font-size: 16px;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .legend {
+        background-color: white;
+        padding: 10px;
+        border: 1px solid black;
+        font-size: 14px;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+      }
+      .legend i {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 8px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Population and Density Comparison</h1>
+    <div class="controls">
+      <label for="year-select-1">Select Year 1:</label>
+      <select id="year-select-1">
+        <!-- Year 2000 to 2020 dynamically added -->
+      </select>
+      <label for="year-select-2">Select Year 2:</label>
+      <select id="year-select-2">
+        <!-- Year 2000 to 2020 dynamically added -->
+      </select>
+    </div>
+    <div id="map"></div>
+    <div id="legend" class="legend"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // Map Initialization
+      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur coordinates
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Add years dynamically to dropdowns
+      const yearSelect1 = document.getElementById("year-select-1");
+      const yearSelect2 = document.getElementById("year-select-2");
+      const startYear = 2000,
+        endYear = 2020;
+      for (let year = startYear; year <= endYear; year++) {
+        const option1 = document.createElement("option");
+        option1.value = year;
+        option1.textContent = year;
+        yearSelect1.appendChild(option1);
+
+        const option2 = document.createElement("option");
+        option2.value = year;
+        option2.textContent = year;
+        yearSelect2.appendChild(option2);
+      }
+
+      // Fetch GeoJSON Data
+      fetch(
+        "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          let geojsonLayer1, geojsonLayer2;
+
+          // Function to style features based on the selected year's property
+          function getStyle(year) {
+            return function (feature) {
+              const density = feature.properties[`density_${year}`];
+              const color = density ? getColor(density) : "#cccccc"; // Default color for missing data
+              return {
+                fillColor: color,
+                weight: 1,
+                color: "#000",
+                fillOpacity: 0.7,
+              };
+            };
+          }
+
+          // Function to determine color based on density
+          function getColor(d) {
+            return d > 2000
+              ? "#800026"
+              : d > 1000
+              ? "#BD0026"
+              : d > 500
+              ? "#E31A1C"
+              : d > 100
+              ? "#FC4E2A"
+              : d > 50
+              ? "#FD8D3C"
+              : "#FFEDA0";
+          }
+
+          // Function to render the GeoJSON with the selected year's data
+          function renderMap(year1, year2) {
+            // Remove previous layers
+            if (geojsonLayer1) map.removeLayer(geojsonLayer1);
+            if (geojsonLayer2) map.removeLayer(geojsonLayer2);
+
+            // Render Year 1 data
+            geojsonLayer1 = L.geoJSON(data, {
+              style: getStyle(year1),
+              onEachFeature: function (feature, layer) {
+                const density = feature.properties[`density_${year1}`];
+                const population = feature.properties[`pop_${year1}`];
+                layer.bindPopup(
+                  `<strong>${feature.properties.NAME}</strong><br />
+                Population (${year1}): ${population}<br />
+                Density (${year1}): ${density ? density.toFixed(2) : "N/A"}`
+                );
+              },
+            }).addTo(map);
+
+            // Render Year 2 data with a transparent layer for comparison
+            geojsonLayer2 = L.geoJSON(data, {
+              style: getStyle(year2),
+              onEachFeature: function (feature, layer) {
+                const density = feature.properties[`density_${year2}`];
+                const population = feature.properties[`pop_${year2}`];
+                layer.bindPopup(
+                  `<strong>${feature.properties.NAME}</strong><br />
+                Population (${year2}): ${population}<br />
+                Density (${year2}): ${density ? density.toFixed(2) : "N/A"}`
+                );
+              },
+            }).addTo(map);
+
+            // Set opacity of Year 2 layer for better comparison
+            geojsonLayer2.setStyle({ fillOpacity: 0.4 });
+          }
+
+          // Initial Render
+          renderMap(startYear, startYear);
+
+          // Update Map on Year Change
+          yearSelect1.addEventListener("change", (event) => {
+            const selectedYear1 = event.target.value;
+            renderMap(selectedYear1, yearSelect2.value);
+          });
+
+          yearSelect2.addEventListener("change", (event) => {
+            const selectedYear2 = event.target.value;
+            renderMap(yearSelect1.value, selectedYear2);
+          });
+
+          // Function to create the legend
+          function createLegend() {
+            const legend = document.getElementById("legend");
+            const colors = [
+              "#FFEDA0",
+              "#FD8D3C",
+              "#FC4E2A",
+              "#E31A1C",
+              "#BD0026",
+              "#800026",
+            ];
+            const labels = [
+              "0 - 50",
+              "50 - 100",
+              "100 - 500",
+              "500 - 1000",
+              "1000 - 2000",
+              "2000+",
+            ];
+            let html = "<strong>Density</strong><br/>";
+            colors.forEach((color, index) => {
+              html += `<i style="background: ${color}"></i> ${labels[index]}<br/>`;
+            });
+            legend.innerHTML = html;
+          }
+
+          createLegend(); // Add the legend initially
+        })
+        .catch((error) => console.error("Error loading GeoJSON:", error));
+    </script>
+  </body>
+</html>
