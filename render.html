@@ -35,7 +35,7 @@
 
       // Fetch and render the GeoJSON data
       fetch(
-        "https://raw.githubusercontent.com/Ohm-Np/ex-data/main/vector/kanchanpur.geojson"
+        "https://raw.githubusercontent.com/Ohm-Np/ex-data/refs/heads/main/vector/kanchanpur.geojson"
       )
         .then((response) => response.json())
         .then((data) => {
@@ -49,9 +49,9 @@
               // Add a popup to each feature
               layer.bindPopup(`
               <strong>Name:</strong> ${feature.properties.NAME}<br>
-              <strong>Population:</strong> ${feature.properties.Population}<br>
+              <strong>Population:</strong> ${feature.properties.pop_2020}<br>
               <strong>Area:</strong> ${feature.properties.Area} km²<br>
-              <strong>Density:</strong> ${feature.properties.Density} people/km²
+              <strong>Density:</strong> ${feature.properties.density_2020} people/km²
             `);
             },
           }).addTo(map);

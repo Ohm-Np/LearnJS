@@ -66,7 +66,7 @@
         .then((data) => {
           // Calculate total population
           const totalPopulation = data.features.reduce((sum, feature) => {
-            return sum + feature.properties.Population; // Sum the population of each feature
+            return sum + feature.properties.pop_2020; // Sum the population of each feature
           }, 0);
 
           console.log("Total Population:", totalPopulation);

@@ -59,7 +59,7 @@
 
           // First, determine the highest population density
           data.features.forEach((feature) => {
-            const density = feature.properties.Density;
+            const density = feature.properties.density_2020;
             if (density > highestDensity) {
               highestDensity = density;
             }
@@ -67,7 +67,7 @@
 
           // Filter the features with density greater than a certain threshold
           highDensityFeatures = data.features.filter(
-            (feature) => feature.properties.Density >= highestDensity
+            (feature) => feature.properties.density_2020 >= highestDensity
           );
 
           // Format the highest density to two decimal places
