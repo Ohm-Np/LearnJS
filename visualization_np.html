@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>जनसंख्या र जनघनत्व (कञ्चनपुर जिल्ला)</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .controls {
+        text-align: center;
+        margin: 10px;
+      }
+      select {
+        padding: 5px;
+        font-size: 16px;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>जनसंख्या र जनघनत्व (कञ्चनपुर जिल्ला)</h1>
+    <div class="controls">
+      <label for="year-select">वर्ष चयन गर्नुहोस्:</label>
+      <select id="year-select">
+        <!-- Years dynamically added by script -->
+      </select>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // Map Initialization
+      const map = L.map("map").setView([28.8387, 80.3213], 10); // Kanchanpur coordinates
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Add years dynamically to dropdown
+      const yearSelect = document.getElementById("year-select");
+      const startYear = 2000,
+        endYear = 2020;
+      for (let year = startYear; year <= endYear; year++) {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      }
+
+      // Fetch GeoJSON Data
+      fetch(
+        "https://raw.githubusercontent.com/Ohm-Np/ex-data/refs/heads/main/vector/%E0%A4%95%E0%A4%9E%E0%A5%8D%E0%A4%9A%E0%A4%A8%E0%A4%AA%E0%A5%81%E0%A4%B0.geojson"
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          let geojsonLayer;
+
+          // Function to style features based on the selected year's property
+          function getStyle(year) {
+            return function (feature) {
+              const density = feature.properties[`density_${year}`];
+              const color = density ? getColor(density) : "#cccccc"; // Default color for missing data
+              return {
+                fillColor: color,
+                weight: 1,
+                color: "#000",
+                fillOpacity: 0.7,
+              };
+            };
+          }
+
+          // Function to determine color based on density
+          function getColor(d) {
+            return d > 2000
+              ? "#800026"
+              : d > 1000
+              ? "#BD0026"
+              : d > 500
+              ? "#E31A1C"
+              : d > 100
+              ? "#FC4E2A"
+              : d > 50
+              ? "#FD8D3C"
+              : "#FFEDA0";
+          }
+
+          // Function to render the GeoJSON with the selected year's data
+          function renderMap(year) {
+            if (geojsonLayer) map.removeLayer(geojsonLayer);
+            geojsonLayer = L.geoJSON(data, {
+              style: getStyle(year),
+              onEachFeature: function (feature, layer) {
+                const density = feature.properties[`density_${year}`];
+                const population = feature.properties[`pop_${year}`];
+                layer.bindPopup(
+                  `<strong>${feature.properties.NAME}</strong><br />
+                जनसंख्या (${year}): ${population}<br />
+                जनघनत्व (${year}): ${density ? density.toFixed(2) : "N/A"}`
+                );
+              },
+            }).addTo(map);
+          }
+
+          // Initial Render
+          renderMap(startYear);
+
+          // Update Map on Year Change
+          yearSelect.addEventListener("change", (event) => {
+            const selectedYear = event.target.value;
+            renderMap(selectedYear);
+          });
+        })
+        .catch((error) => console.error("Error loading GeoJSON:", error));
+    </script>
+  </body>
+</html>
